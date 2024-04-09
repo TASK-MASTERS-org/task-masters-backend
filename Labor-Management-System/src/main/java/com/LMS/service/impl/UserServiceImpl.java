@@ -5,20 +5,17 @@ import com.LMS.dto.AuthenticationResponseDto;
 import com.LMS.entity.User;
 import com.LMS.exception.EmailAlreadyExistsException;
 import com.LMS.repository.UserRepository;
+import com.LMS.service.EmailService;
 import com.LMS.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl  implements UserService {
@@ -30,7 +27,8 @@ public class UserServiceImpl  implements UserService {
     private  PasswordEncoder passwordEncoder;
     @Autowired
     private  AuthenticationManager authenticationManager;
-
+    @Autowired
+    private EmailService emailService;
     @Override
     public String registerUser(User user) {
         try {
@@ -82,4 +80,52 @@ public class UserServiceImpl  implements UserService {
 
         return  AuthenticationResponseDto.builder().accessToken(jwtToken).build();
     }
+
+
+    @Override
+    public void initiatePasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        String token = UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setTokenExpirationDate(LocalDateTime.now().plusMinutes(30)); // Token expires in 30 minutes
+        userRepository.save(user);
+
+        // Send the token to the user's email. Implement your email service to handle email sending.
+        try {
+            emailService.sendPasswordResetEmail(user.getEmail(), token); // Assume this method exists in your email service
+        } catch (Exception e) {
+            // Handle email sending failure
+            System.out.println(e);
+            throw new RuntimeException("Failed to send reset email");
+        }
+    }
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        // Retrieve the token from the database and verify it
+        // Ensure it's not expired and is valid
+        // For example: PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token).orElseThrow(() -> new RuntimeException("Invalid token"));
+//
+//        User user = resetToken.getUser();
+//        String encodedPassword = passwordEncoder.encode(newPassword);
+//        user.setPassword(encodedPassword);
+//        userRepository.save(user);
+
+        // Optionally, invalidate the token after use
+
+        User user = userRepository.findByResetToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        if (user.getTokenExpirationDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token expired");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetToken(null); // Invalidate the reset token
+        user.setTokenExpirationDate(null); // Clear the expiration date
+        userRepository.save(user);
+    }
+
+
 }

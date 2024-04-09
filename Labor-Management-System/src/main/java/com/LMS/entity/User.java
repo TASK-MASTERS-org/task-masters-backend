@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 
 @Getter
@@ -27,6 +28,8 @@ public class User  implements UserDetails {
     private String phoneNumber;
     @Enumerated(EnumType.STRING)
     private Role role;
+    private String resetToken;
+    private LocalDateTime tokenExpirationDate;
 
     public User() {
         // Set default role to USER in the no-args constructor
