@@ -113,18 +113,34 @@ public class UserServiceImpl  implements UserService {
 //        userRepository.save(user);
 
         // Optionally, invalidate the token after use
+        try {
+            // Attempt to retrieve the user by the reset token
+            User user = userRepository.findByResetToken(token)
+                    .orElseThrow(() -> new RuntimeException("Invalid token"));
 
-        User user = userRepository.findByResetToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+            // Check if the token is expired
+            if (user.getTokenExpirationDate().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Token expired");
+            }
 
-        if (user.getTokenExpirationDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
+            // Encode the new password and set it to the user
+            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setResetToken(null); // Invalidate the reset token
+            user.setTokenExpirationDate(null); // Clear the expiration date
+
+            // Save the user with the new password, and token information cleared
+            userRepository.save(user);
+        } catch (RuntimeException e) {
+            // Handle runtime exceptions, such as invalid token or token expired
+            // This can be logged and/or rethrown to be handled further up the call stack
+            System.out.println(e);
+            throw e;
+        } catch (Exception e) {
+            System.out.println(e);
+            // Catch any other exceptions that were not anticipated
+            // Log the error and perhaps wrap it in a custom exception that's more informative
+            throw new RuntimeException("Error resetting password", e);
         }
-
-        user.setPassword(passwordEncoder.encode(newPassword));
-        user.setResetToken(null); // Invalidate the reset token
-        user.setTokenExpirationDate(null); // Clear the expiration date
-        userRepository.save(user);
     }
 
 
