@@ -7,6 +7,8 @@ import com.LMS.exception.EmailAlreadyExistsException;
 import com.LMS.repository.UserRepository;
 import com.LMS.service.EmailService;
 import com.LMS.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,20 +20,24 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-public class UserServiceImpl  implements UserService {
+public class UserServiceImpl implements UserService {
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private   JwtService jwtService;
+    private JwtService jwtService;
     @Autowired
-    private  PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
     @Autowired
-    private  AuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
     @Autowired
     private EmailService emailService;
+
     @Override
     public String registerUser(User user) {
         try {
+            logger.info("Attempting to register user with email: {}", user.getEmail());
             userRepository.findByEmail(user.getEmail())
                     .ifPresent(u -> {
                         throw new EmailAlreadyExistsException(user.getEmail());
@@ -41,107 +47,121 @@ public class UserServiceImpl  implements UserService {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             userRepository.save(user);
 
+            logger.info("User registered successfully with email: {}", user.getEmail());
             return jwtToken;
         } catch (EmailAlreadyExistsException e) {
-            // Handle specific case where the email already exists
-            // Log the error or handle it as per your application's requirement
-            // For example, logging and then rethrowing or returning a specific error message/token
-//            logger.error("Registration failed: Email already exists - {}", e.getMessage());
-            throw e; // Rethrow if you want the exception to be handled further up the chain
+            logger.error("Registration failed: Email already exists - {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
-            // Handle other unexpected exceptions
-//            logger.error("An unexpected error occurred during registration: {}", e.getMessage());
-            // Depending on your application's design, you might want to throw a custom exception here
+            logger.error("An unexpected error occurred during registration: {}", e.getMessage());
             throw new RuntimeException("Registration failed due to an unexpected error");
         }
     }
 
     @Override
     public AuthenticationResponseDto authenticateUser(String email, String password) {
-        //FirstStep
-        //We need to validate our request (validate whether password & username is correct)
-        //Verify whether user present in the database
-        //Which AuthenticationProvider -> DaoAuthenticationProvider (Inject)
-        //We need to authenticate using authenticationManager injecting this authenticationProvider
-        //SecondStep
-        //Verify whether userName and password is correct => UserNamePasswordAuthenticationToken
-        //Verify whether user present in db
-        //generateToken
-        //Return the token
-
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        email,
-                        password
-                )
-        );
-        var user = userRepository.findByEmail(email).orElseThrow();
-        String jwtToken = jwtService.generateToken(user);
-
-        return  AuthenticationResponseDto.builder().accessToken(jwtToken).build();
+        try {
+            logger.info("Authenticating user with email: {}", email);
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            var user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+            String jwtToken = jwtService.generateToken(user);
+            logger.info("Authentication successful for user: {}", email);
+            return AuthenticationResponseDto.builder().accessToken(jwtToken).build();
+        } catch (UsernameNotFoundException e) {
+            logger.error("Authentication failed for user: {}. User not found.", email);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error during authentication for user: {}", email, e);
+            throw new RuntimeException("Authentication failed due to an error");
+        }
     }
-
 
     @Override
     public void initiatePasswordReset(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        String token = UUID.randomUUID().toString();
-        user.setResetToken(token);
-        user.setTokenExpirationDate(LocalDateTime.now().plusMinutes(30)); // Token expires in 30 minutes
-        userRepository.save(user);
-
-        // Send the token to the user's email. Implement your email service to handle email sending.
         try {
-            emailService.sendPasswordResetEmail(user.getEmail(), token); // Assume this method exists in your email service
+            logger.info("Initiating password reset for email: {}", email);
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+            String token = UUID.randomUUID().toString();
+            user.setResetToken(token);
+            user.setTokenExpirationDate(LocalDateTime.now().plusMinutes(30));
+            userRepository.save(user);
+
+            emailService.sendPasswordResetEmail(user.getEmail(), token);
+            logger.info("Password reset email sent successfully to: {}", email);
+        } catch (UsernameNotFoundException e) {
+            logger.error("Password reset initiation failed for email: {}. User not found.", email);
+            throw e;
         } catch (Exception e) {
-            // Handle email sending failure
-            System.out.println(e);
+            logger.error("Failed to send password reset email to: {}", email, e);
             throw new RuntimeException("Failed to send reset email");
         }
     }
+
     @Override
     public void resetPassword(String token, String newPassword) {
-        // Retrieve the token from the database and verify it
-        // Ensure it's not expired and is valid
-        // For example: PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token).orElseThrow(() -> new RuntimeException("Invalid token"));
-//
-//        User user = resetToken.getUser();
-//        String encodedPassword = passwordEncoder.encode(newPassword);
-//        user.setPassword(encodedPassword);
-//        userRepository.save(user);
-
-        // Optionally, invalidate the token after use
         try {
-            // Attempt to retrieve the user by the reset token
+            logger.info("Resetting password using token: {}", token);
             User user = userRepository.findByResetToken(token)
                     .orElseThrow(() -> new RuntimeException("Invalid token"));
 
-            // Check if the token is expired
             if (user.getTokenExpirationDate().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException("Token expired");
             }
 
-            // Encode the new password and set it to the user
             user.setPassword(passwordEncoder.encode(newPassword));
-            user.setResetToken(null); // Invalidate the reset token
-            user.setTokenExpirationDate(null); // Clear the expiration date
-
-            // Save the user with the new password, and token information cleared
+            user.setResetToken(null);
+            user.setTokenExpirationDate(null);
             userRepository.save(user);
+
+            logger.info("Password reset successfully for user: {}", user.getEmail());
         } catch (RuntimeException e) {
-            // Handle runtime exceptions, such as invalid token or token expired
-            // This can be logged and/or rethrown to be handled further up the call stack
-            System.out.println(e);
+            logger.error("Error resetting password: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            System.out.println(e);
-            // Catch any other exceptions that were not anticipated
-            // Log the error and perhaps wrap it in a custom exception that's more informative
+            logger.error("Unexpected error during password reset", e);
             throw new RuntimeException("Error resetting password", e);
         }
     }
 
+    @Override
+    public void deleteUserByEmail(String email) {
+        try {
+            logger.info("Attempting to delete user with email: {}", email);
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+            userRepository.delete(user);
+            logger.info("User with email {} deleted successfully.", email);
+        } catch (RuntimeException e) {
+            logger.error("Error deleting user with email {}: {}", email, e.getMessage());
+            throw e; // Rethrow the exception if you want to handle it further up (e.g., at the controller level)
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while deleting user with email {}: {}", email, e.getMessage());
+            throw new RuntimeException("Deletion failed due to an unexpected error");
+        }
+    }
+    @Override
+    public void updateUserByEmail(String email, User updatedUser) {
+        try {
+            logger.info("Attempting to update user with email: {} First Name:{} lastname:{}", email,updatedUser.getFName());
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
+            // Update user details here
+            user.setFName(updatedUser.getFName());
+            user.setLName(updatedUser.getLName());
+            user.setAddress(updatedUser.getAddress());
+            user.setPhoneNumber(updatedUser.getPhoneNumber());
+            // Continue updating other fields as necessary
+
+            userRepository.save(user);
+            logger.info("User with email {} updated successfully.", email);
+        } catch (RuntimeException e) {
+            logger.error("Error updating user with email {}: {}", email, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while updating user with email {}: {}", email, e.getMessage());
+            throw new RuntimeException("Update failed due to an unexpected error");
+        }
+    }
 }

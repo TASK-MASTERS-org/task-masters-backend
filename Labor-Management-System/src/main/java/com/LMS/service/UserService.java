@@ -8,8 +8,11 @@ public interface UserService {
     String registerUser(User user);
     AuthenticationResponseDto authenticateUser(String email, String password);
 
-
     void initiatePasswordReset(String email);
 
     void resetPassword(String token, String newPassword);
+    void deleteUserByEmail(String email);
+    void updateUserByEmail(String email, User updatedUser);
+
+
 }

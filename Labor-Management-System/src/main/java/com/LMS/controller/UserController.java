@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,12 +40,22 @@ public class UserController {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponseDto> authenticate(@RequestBody AuthenticationRequestDto request) {
-        logger.info("Authentication request for {}", request.getEmail());
-        AuthenticationResponseDto response = userService.authenticateUser(request.getEmail(), request.getPassword());
-        logger.info("Authentication successful for {}", request.getEmail());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> authenticate(@RequestBody AuthenticationRequestDto request) {
+        try {
+            logger.info("Authentication request for {}", request.getEmail());
+            AuthenticationResponseDto response = userService.authenticateUser(request.getEmail(), request.getPassword());
+            logger.info("Authentication successful for {}", request.getEmail());
+            return ResponseEntity.ok(response);
+        } catch (AuthenticationException e) {
+            logger.error("Authentication failed for {}: {}", request.getEmail(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error processing authentication for {}: {}", request.getEmail(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing authentication request");
+        }
     }
+
+
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestParam String email) {
@@ -75,6 +86,28 @@ public class UserController {
         } catch (Exception ex) {
             logger.error("Error processing password reset with token {}: {}", token, ex.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("An error occurred while processing your request."));
+        }
+
+    }
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteUserByEmail(@RequestParam String email) {
+        try {
+            logger.info("deleteUserByEmail Request {}",email);
+            userService.deleteUserByEmail(email);
+            logger.info("deleteUserByEmail Request-End ");
+            return ResponseEntity.ok().body("User with email " + email + " has been deleted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting user: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUserByEmail(@RequestParam String email, @RequestBody User updatedUser) {
+        try {
+            userService.updateUserByEmail(email, updatedUser);
+            return ResponseEntity.ok().body("User with email " + email + " updated successfully.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Failed to update user: " + e.getMessage());
         }
     }
 }
