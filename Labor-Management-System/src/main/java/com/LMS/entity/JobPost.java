@@ -19,7 +19,7 @@ public class JobPost {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    @JsonIgnoreProperties({"email", "password", "address", "phoneNumber", "role", "resetToken",
+    @JsonIgnoreProperties({"user", "password", "address", "phoneNumber", "role", "resetToken",
             "tokenExpirationDate", "enabled", "username", "authorities", "fName",
             "lName", "accountNonExpired", "credentialsNonExpired", "accountNonLocked"}) // ignore all except id// This line specifies the foreign key.
     private User user; // This changes from String user_id to User user to directly reference the User entity.
