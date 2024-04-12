@@ -1,5 +1,6 @@
 package com.LMS.entity;
 
+import com.LMS.utils.Role;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -23,13 +24,16 @@ public class JobPost {
             "lName", "accountNonExpired", "credentialsNonExpired", "accountNonLocked"}) // ignore all except id// This line specifies the foreign key.
     private User user; // This changes from String user_id to User user to directly reference the User entity.
 
-    private String name;
+    private String category;
     private String description;
     private LocalDateTime date;
     private String skills;
-    private String upper_price;
-    private String lower_price;
+    private String location;
+    private String budget;
+    private String Status;
 
-
+    public JobPost() {
+        this.Status ="pending";
+    }
 
 }

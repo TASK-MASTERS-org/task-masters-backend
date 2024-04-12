@@ -66,4 +66,17 @@ public class JobPostController {
             return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Error deleting job post"));
         }
     }
+    @GetMapping("/getJobPostByID")
+    public ResponseEntity<ApiResponse> getJobPostByID(@RequestParam Long j_Id) {
+        try {
+            logger.info("Fetching  job post for j_Id ID {}", j_Id);
+            ApiResponse jobPosts = jobPostService.getJobPostById(j_Id);
+            logger.info("Fetching  job posts for j_Id  Controller Response:{}", jobPosts);
+            return ResponseEntity.ok(jobPosts);
+        } catch (Exception e) {
+            logger.error("Error fetching job posts for user ID {}: {}",j_Id , e.getMessage());
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to fetch job posts for user"));
+        }
+    }
+
 }

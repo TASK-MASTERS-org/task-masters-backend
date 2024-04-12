@@ -12,4 +12,5 @@ public interface JobPostService {
 
     ApiResponse updateJobPost(Long id, JobPost jobPost);
     ApiResponse deleteJobPost(Long id);
+    ApiResponse getJobPostById(Long j_Id);
 }
