@@ -44,4 +44,26 @@ public class JobPostController {
             return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to fetch job posts for user"));
         }
     }
+
+    @PutMapping("/update")
+    public ResponseEntity<ApiResponse> updateJobPost(@RequestParam Long id, @RequestBody JobPost jobPost) {
+        try {
+            logger.info("Updating job post with ID {}", id);
+            return ResponseEntity.ok(jobPostService.updateJobPost(id, jobPost));
+        } catch (Exception e) {
+            logger.error("Error updating job post: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Error updating job post"));
+        }
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<ApiResponse> deleteJobPost(@RequestParam Long id) {
+        try {
+            logger.info("Deleting job post with ID {}", id);
+            return ResponseEntity.ok(jobPostService.deleteJobPost(id));
+        } catch (Exception e) {
+            logger.error("Error deleting job post: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Error deleting job post"));
+        }
+    }
 }
