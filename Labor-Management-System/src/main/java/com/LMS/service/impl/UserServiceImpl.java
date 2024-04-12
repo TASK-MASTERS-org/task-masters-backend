@@ -7,6 +7,7 @@ import com.LMS.exception.EmailAlreadyExistsException;
 import com.LMS.repository.UserRepository;
 import com.LMS.service.EmailService;
 import com.LMS.service.UserService;
+import com.LMS.utils.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
     private EmailService emailService;
 
     @Override
-    public String registerUser(User user) {
+    public ApiResponse registerUser(User user) {
         try {
             logger.info("Attempting to register user with email: {}", user.getEmail());
             userRepository.findByEmail(user.getEmail())
@@ -43,12 +44,10 @@ public class UserServiceImpl implements UserService {
                         throw new EmailAlreadyExistsException(user.getEmail());
                     });
 
-            String jwtToken = jwtService.generateToken(user);
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            userRepository.save(user);
-
+            User data= userRepository.save(user);
+                String massage="User registered successfully with email: "+ user.getEmail();
             logger.info("User registered successfully with email: {}", user.getEmail());
-            return jwtToken;
+            return  new ApiResponse(massage,data);
         } catch (EmailAlreadyExistsException e) {
             logger.error("Registration failed: Email already exists - {}", e.getMessage());
             throw e;

@@ -29,10 +29,9 @@ public class UserController {
     public ResponseEntity<ApiResponse<User>> registerUser(@RequestBody User user) {
         try {
             logger.info("Starting user registration for {}", user.getEmail());
-            String registeredUserResponse = userService.registerUser(user);
-            ApiResponse<User> response = new ApiResponse<>("Registration successful");
+            ApiResponse registeredUserResponse = userService.registerUser(user);
             logger.info("User registration completed for {}", user.getEmail());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(registeredUserResponse);
         } catch (EmailAlreadyExistsException e) {
             logger.error("Registration unsuccessful for {}: {}", user.getEmail(), e.getMessage());
             ApiResponse<User> response = new ApiResponse<>("Registration Unsuccessful, " + e.getMessage());
