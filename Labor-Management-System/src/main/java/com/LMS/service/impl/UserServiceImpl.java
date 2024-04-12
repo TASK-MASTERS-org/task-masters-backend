@@ -1,42 +1,170 @@
 package com.LMS.service.impl;
 
+import com.LMS.configs.JwtService;
+import com.LMS.dto.AuthenticationResponseDto;
 import com.LMS.entity.User;
 import com.LMS.exception.EmailAlreadyExistsException;
 import com.LMS.repository.UserRepository;
+import com.LMS.service.EmailService;
 import com.LMS.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.BadCredentialsException;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
-public class UserServiceImpl  implements UserService {
+public class UserServiceImpl implements UserService {
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private EmailService emailService;
 
     @Override
-    public User registerUser(User user) {
+    public String registerUser(User user) {
+        try {
+            logger.info("Attempting to register user with email: {}", user.getEmail());
+            userRepository.findByEmail(user.getEmail())
+                    .ifPresent(u -> {
+                        throw new EmailAlreadyExistsException(user.getEmail());
+                    });
 
-        userRepository.findByEmail(user.getEmail())
-                .ifPresent(u -> {
-                    throw new EmailAlreadyExistsException(user.getEmail());
-                });
-        //Hash the password
-        String HashedPassword= BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(12));
-        user.setPassword(HashedPassword);
-        return userRepository.save(user);
+            String jwtToken = jwtService.generateToken(user);
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            userRepository.save(user);
+
+            logger.info("User registered successfully with email: {}", user.getEmail());
+            return jwtToken;
+        } catch (EmailAlreadyExistsException e) {
+            logger.error("Registration failed: Email already exists - {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred during registration: {}", e.getMessage());
+            throw new RuntimeException("Registration failed due to an unexpected error");
+        }
     }
 
     @Override
-    public User authenticateUser(String email, String password) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        if (!password.equals(user.getPassword())) { // Simplified; use a password encoder in real applications
-            throw new BadCredentialsException("Invalid credentials");
+    public AuthenticationResponseDto authenticateUser(String email, String password) {
+        try {
+            logger.info("Authenticating user with email: {}", email);
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            var user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+            String jwtToken = jwtService.generateToken(user);
+            logger.info("Authentication successful for user: {}", email);
+            return AuthenticationResponseDto.builder().accessToken(jwtToken).build();
+        } catch (BadCredentialsException e) {
+            logger.error("Authentication failed for user: {}. Incorrect credentials.", email);
+            throw e;
+        } catch (UsernameNotFoundException e) {
+            logger.error("Authentication failed for user: {}. User not found.", email);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error during authentication for user: {}", email, e);
+            throw new RuntimeException("Authentication failed due to an error");
         }
+    }
 
-        return user;
+    @Override
+    public void initiatePasswordReset(String email) {
+        try {
+            logger.info("Initiating password reset for email: {}", email);
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+            String token = UUID.randomUUID().toString();
+            user.setResetToken(token);
+            user.setTokenExpirationDate(LocalDateTime.now().plusMinutes(30));
+            userRepository.save(user);
+
+            emailService.sendPasswordResetEmail(user.getEmail(), token);
+            logger.info("Password reset email sent successfully to: {}", email);
+       } catch (UsernameNotFoundException e) {
+            logger.error("Password reset initiation failed for email: {}. User not found.", email);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to send password reset email to: {}", email, e);
+            throw new RuntimeException("Failed to send reset email");
+        }
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        try {
+            logger.info("Resetting password using token: {}", token);
+            User user = userRepository.findByResetToken(token)
+                    .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+            if (user.getTokenExpirationDate().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Token expired");
+            }
+
+            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setResetToken(null);
+            user.setTokenExpirationDate(null);
+            userRepository.save(user);
+
+            logger.info("Password reset successfully for user: {}", user.getEmail());
+        } catch (RuntimeException e) {
+            logger.error("Error resetting password: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error during password reset", e);
+            throw new RuntimeException("Error resetting password", e);
+        }
+    }
+
+    @Override
+    public void deleteUserByEmail(String email) {
+        try {
+            logger.info("Attempting to delete user with email: {}", email);
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+            userRepository.delete(user);
+            logger.info("User with email {} deleted successfully.", email);
+        } catch (RuntimeException e) {
+            logger.error("Error deleting user with email {}: {}", email, e.getMessage());
+            throw e; // Rethrow the exception if you want to handle it further up (e.g., at the controller level)
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while deleting user with email {}: {}", email, e.getMessage());
+            throw new RuntimeException("Deletion failed due to an unexpected error");
+        }
+    }
+    @Override
+    public void updateUserByEmail(String email, User updatedUser) {
+        try {
+            logger.info("Attempting to update user with email: {} First Name:{} lastname:{}", email,updatedUser.getFName());
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+            // Update user details here
+            user.setFName(updatedUser.getFName());
+            user.setLName(updatedUser.getLName());
+            user.setAddress(updatedUser.getAddress());
+            user.setPhoneNumber(updatedUser.getPhoneNumber());
+            // Continue updating other fields as necessary
+
+            userRepository.save(user);
+            logger.info("User with email {} updated successfully.", email);
+        } catch (RuntimeException e) {
+            logger.error("Error updating user with email {}: {}", email, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while updating user with email {}: {}", email, e.getMessage());
+            throw new RuntimeException("Update failed due to an unexpected error");
+        }
     }
 }
