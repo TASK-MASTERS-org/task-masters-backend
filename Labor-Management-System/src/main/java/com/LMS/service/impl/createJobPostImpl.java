@@ -42,4 +42,31 @@ throw  new RuntimeException("error while Creating Job Posts",e);
             throw  new RuntimeException("error while Fetching job Post By User Id ", e);
         }
     }
+
+    @Override
+    public ApiResponse updateJobPost(Long id, JobPost updatedJobPost) {
+        logger.info("update Job Postb post ServiceImpl Request  id-:{} JobPost:{} ",id,updatedJobPost);
+        return jobPostRepository.findById(id)
+                .map(jobPost -> {
+                    jobPost.setName(updatedJobPost.getName());
+                    jobPost.setDescription(updatedJobPost.getDescription());
+                    jobPost.setDate(updatedJobPost.getDate());
+                    jobPost.setSkills(updatedJobPost.getSkills());
+                    jobPost.setUpper_price(updatedJobPost.getUpper_price());
+                    jobPost.setLower_price(updatedJobPost.getLower_price());
+                    jobPostRepository.save(jobPost);
+                    return new ApiResponse("Job post updated successfully", jobPost);
+                }).orElse(new ApiResponse("Job post not found", null));
+    }
+
+    @Override
+    public ApiResponse deleteJobPost(Long id) {
+        logger.info("JJob post deleted request ");
+        if (jobPostRepository.existsById(id)) {
+            jobPostRepository.deleteById(id);
+            return new ApiResponse("Job post deleted successfully", null);
+        } else {
+            return new ApiResponse("Job post not found", null);
+        }
+    }
 }

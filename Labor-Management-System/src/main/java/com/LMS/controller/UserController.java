@@ -102,6 +102,7 @@ public class UserController {
             logger.info("deleteUserByEmail Request-End ");
             return ResponseEntity.ok().body("User with email " + email + " has been deleted successfully.");
         } catch (Exception e) {
+            logger.error("Failed to deleting user:{}", e.getMessage());
             return ResponseEntity.badRequest().body("Error deleting user: " + e.getMessage());
         }
     }
@@ -109,9 +110,12 @@ public class UserController {
     @PutMapping("/update")
     public ResponseEntity<?> updateUserByEmail(@RequestParam String email, @RequestBody User updatedUser) {
         try {
+            logger.info("UpdateUserByEmail Request {}",email);
             userService.updateUserByEmail(email, updatedUser);
+            logger.info("deleteUserByEmail Request-End :{} ",updatedUser);
             return ResponseEntity.ok().body("User with email " + email + " updated successfully.");
         } catch (RuntimeException e) {
+            logger.error("Failed to update user:{}", e.getMessage());
             return ResponseEntity.badRequest().body("Failed to update user: " + e.getMessage());
         }
     }
