@@ -49,12 +49,13 @@ throw  new RuntimeException("error while Creating Job Posts",e);
         logger.info("update Job Postb post ServiceImpl Request  id-:{} JobPost:{} ",id,updatedJobPost);
         return jobPostRepository.findById(id)
                 .map(jobPost -> {
-                    jobPost.setName(updatedJobPost.getName());
+                    jobPost.setCategory(updatedJobPost.getCategory());
                     jobPost.setDescription(updatedJobPost.getDescription());
                     jobPost.setDate(updatedJobPost.getDate());
                     jobPost.setSkills(updatedJobPost.getSkills());
-                    jobPost.setUpper_price(updatedJobPost.getUpper_price());
-                    jobPost.setLower_price(updatedJobPost.getLower_price());
+                    jobPost.setLocation(updatedJobPost.getLocation());
+                    jobPost.setBudget(updatedJobPost.getBudget());
+                    jobPost.setStatus((updatedJobPost.getStatus()));
                     jobPostRepository.save(jobPost);
                     return new ApiResponse("Job post updated successfully", jobPost);
                 }).orElse(new ApiResponse("Job post not found", null));
