@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
@@ -46,10 +47,14 @@ public class UserController {
             AuthenticationResponseDto response = userService.authenticateUser(request.getEmail(), request.getPassword());
             logger.info("Authentication successful for {}", request.getEmail());
             return ResponseEntity.ok(response);
+        } catch (BadCredentialsException e) {
+            logger.error("Authentication failed for user. Incorrect credentials.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect email or password. Please try again: " + e.getMessage());
         } catch (AuthenticationException e) {
             logger.error("Authentication failed for {}: {}", request.getEmail(), e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed: " + e.getMessage());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error processing authentication for {}: {}", request.getEmail(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing authentication request");
         }

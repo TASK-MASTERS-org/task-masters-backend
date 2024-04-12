@@ -15,7 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.springframework.security.authentication.BadCredentialsException;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -67,6 +67,9 @@ public class UserServiceImpl implements UserService {
             String jwtToken = jwtService.generateToken(user);
             logger.info("Authentication successful for user: {}", email);
             return AuthenticationResponseDto.builder().accessToken(jwtToken).build();
+        } catch (BadCredentialsException e) {
+            logger.error("Authentication failed for user: {}. Incorrect credentials.", email);
+            throw e;
         } catch (UsernameNotFoundException e) {
             logger.error("Authentication failed for user: {}. User not found.", email);
             throw e;
@@ -90,7 +93,7 @@ public class UserServiceImpl implements UserService {
 
             emailService.sendPasswordResetEmail(user.getEmail(), token);
             logger.info("Password reset email sent successfully to: {}", email);
-        } catch (UsernameNotFoundException e) {
+       } catch (UsernameNotFoundException e) {
             logger.error("Password reset initiation failed for email: {}. User not found.", email);
             throw e;
         } catch (Exception e) {
