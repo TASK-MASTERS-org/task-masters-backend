@@ -1,5 +1,6 @@
 package com.LMS.entity;
 
+import com.LMS.utils.Role;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,7 +30,10 @@ public class JobPost {
     private String skills;
     private String upper_price;
     private String lower_price;
+    private String Status;
 
-
+    public JobPost() {
+        this.Status ="pending";
+    }
 
 }

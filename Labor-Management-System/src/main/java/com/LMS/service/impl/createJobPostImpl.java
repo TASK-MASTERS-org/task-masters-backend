@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class createJobPostImpl implements JobPostService {
@@ -69,4 +70,18 @@ throw  new RuntimeException("error while Creating Job Posts",e);
             return new ApiResponse("Job post not found", null);
         }
     }
+
+    @Override
+    public ApiResponse getJobPostById(Long id) {
+        logger.info("Retrieving job post with ID {}", id);
+        Optional<JobPost> jobPost = jobPostRepository.findById(id);
+        if (jobPost.isPresent()) {
+            logger.info("Found job post with ID {}", id);
+        } else {
+            logger.warn("No job post found with ID {}", id);
+        }
+        return new ApiResponse("getJobPostById Success",jobPost);
+    }
+
+
 }
