@@ -30,10 +30,9 @@ public class JobPost {
     private String skills;
     private String location;
     private String budget;
-    private String Status;
-
-    public JobPost() {
-        this.Status ="pending";
-    }
+    @OneToOne
+    @JsonIgnoreProperties({"user","employee","jobPost"})
+    @JoinColumn(name = "hiredLabour_Id", referencedColumnName = "id",nullable = true)
+    private HiredLabour hiredLabour;
 
 }
