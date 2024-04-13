@@ -1,7 +1,9 @@
 package com.LMS.service.impl;
 
 import com.LMS.controller.UserController;
+import com.LMS.entity.HiredLabour;
 import com.LMS.entity.JobPost;
+import com.LMS.repository.HiredLabourRepository;
 import com.LMS.repository.JobPostRepository;
 import com.LMS.service.JobPostService;
 import com.LMS.utils.ApiResponse;
@@ -10,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,12 +21,24 @@ import java.util.Optional;
 public class createJobPostImpl implements JobPostService {
     @Autowired
     private JobPostRepository jobPostRepository;
+    @Autowired
+    private HiredLabourRepository hiredLabourRepository;
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Override
     public ApiResponse createJobPost(JobPost jobPost) {
 try {
     logger.info("Create Job post ServiceImpl Request JobPost data:{} ",jobPost);
+
+    HiredLabour hiredLabour = new HiredLabour();
+//    hiredLabour.setEmployee(null);
+    hiredLabour.setUser(jobPost.getUser());
+    hiredLabour.setDate(LocalDateTime.now());
+    hiredLabour.setStatus("Pending");
+    logger.info("Create Job post ServiceImpl Request hiredLabour Save data:{} ",hiredLabour);
+    HiredLabour respone= hiredLabourRepository.save(hiredLabour);
+    logger.info("Create Job post ServiceImpl Response hiredLabour  data:{} ",respone);
+    jobPost.setHiredLabour(respone);
     JobPost data = jobPostRepository.save(jobPost);
     logger.info("Create Job post ServiceImpl Response-data:{} ",data);
     return new ApiResponse("create Job Post Success", data);
@@ -55,7 +71,6 @@ throw  new RuntimeException("error while Creating Job Posts",e);
                     jobPost.setSkills(updatedJobPost.getSkills());
                     jobPost.setLocation(updatedJobPost.getLocation());
                     jobPost.setBudget(updatedJobPost.getBudget());
-                    jobPost.setStatus((updatedJobPost.getStatus()));
                     jobPostRepository.save(jobPost);
                     return new ApiResponse("Job post updated successfully", jobPost);
                 }).orElse(new ApiResponse("Job post not found", null));
