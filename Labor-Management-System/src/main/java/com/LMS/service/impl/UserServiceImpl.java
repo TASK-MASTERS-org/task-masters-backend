@@ -4,6 +4,7 @@ import com.LMS.configs.JwtService;
 import com.LMS.dto.AuthenticationResponseDto;
 import com.LMS.entity.User;
 import com.LMS.exception.EmailAlreadyExistsException;
+import com.LMS.exception.UserNotFoundException;
 import com.LMS.repository.UserRepository;
 import com.LMS.service.EmailService;
 import com.LMS.service.UserService;
@@ -47,7 +48,7 @@ public class UserServiceImpl implements UserService {
             User data= userRepository.save(user);
                 String massage="User registered successfully with email: "+ user.getEmail();
             logger.info("User registered successfully with email: {}", user.getEmail());
-            return  new ApiResponse(massage,data);
+            return  new ApiResponse(massage,data,200);
         } catch (EmailAlreadyExistsException e) {
             logger.error("Registration failed: Email already exists - {}", e.getMessage());
             throw e;
@@ -131,7 +132,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUserByEmail(String email) {
         try {
             logger.info("Attempting to delete user with email: {}", email);
-            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
             userRepository.delete(user);
             logger.info("User with email {} deleted successfully.", email);
         } catch (RuntimeException e) {
@@ -139,7 +140,7 @@ public class UserServiceImpl implements UserService {
             throw e; // Rethrow the exception if you want to handle it further up (e.g., at the controller level)
         } catch (Exception e) {
             logger.error("An unexpected error occurred while deleting user with email {}: {}", email, e.getMessage());
-            throw new RuntimeException("Deletion failed due to an unexpected error");
+            throw new RuntimeException("Deletion failed due to an unexpected error"+e.getMessage());
         }
     }
     @Override
@@ -147,7 +148,7 @@ public class UserServiceImpl implements UserService {
         try {
             logger.info("Attempting to update user with email: {} First Name:{} lastname:{}", email,updatedUser.getFName());
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                    .orElseThrow(() -> new UserNotFoundException(email));
 
             // Update user details here
             user.setFName(updatedUser.getFName());

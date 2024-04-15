@@ -41,7 +41,7 @@ try {
     jobPost.setHiredLabour(respone);
     JobPost data = jobPostRepository.save(jobPost);
     logger.info("Create Job post ServiceImpl Response-data:{} ",data);
-    return new ApiResponse("create Job Post Success", data);
+    return new ApiResponse("create Job Post Success", data,200);
 }catch (Exception e){
     logger.error("error while Creating Job Posts",e);
 throw  new RuntimeException("error while Creating Job Posts",e);
@@ -53,7 +53,7 @@ throw  new RuntimeException("error while Creating Job Posts",e);
             logger.info("Create Job post ServiceImpl Request  userId-:{} ",userId);
             List<JobPost> Data = jobPostRepository.findByUserId(userId);
             logger.info("Create Job post ServiceImpl Response   Data-:{} ",Data);
-        return new ApiResponse("Get All Job Posts By UserId Success",Data);
+        return new ApiResponse("Get All Job Posts By UserId Success",Data,200);
     }catch (Exception e){
             logger.error("error while Fetching job Post By User Id ", e);
             throw  new RuntimeException("error while Fetching job Post By User Id ", e);
@@ -72,8 +72,8 @@ throw  new RuntimeException("error while Creating Job Posts",e);
                     jobPost.setLocation(updatedJobPost.getLocation());
                     jobPost.setBudget(updatedJobPost.getBudget());
                     jobPostRepository.save(jobPost);
-                    return new ApiResponse("Job post updated successfully", jobPost);
-                }).orElse(new ApiResponse("Job post not found", null));
+                    return new ApiResponse("Job post updated successfully", jobPost,200);
+                }).orElse(new ApiResponse("Job post not found", null,404));
     }
 
     @Override
@@ -81,9 +81,9 @@ throw  new RuntimeException("error while Creating Job Posts",e);
         logger.info("JJob post deleted request ");
         if (jobPostRepository.existsById(id)) {
             jobPostRepository.deleteById(id);
-            return new ApiResponse("Job post deleted successfully", null);
+            return new ApiResponse("Job post deleted successfully", null,200);
         } else {
-            return new ApiResponse("Job post not found", null);
+            return new ApiResponse("Job post not found", null,404);
         }
     }
 
@@ -96,7 +96,7 @@ throw  new RuntimeException("error while Creating Job Posts",e);
         } else {
             logger.warn("No job post found with ID {}", id);
         }
-        return new ApiResponse("getJobPostById Success",jobPost);
+        return new ApiResponse("getJobPostById Success",jobPost,200);
     }
 
 

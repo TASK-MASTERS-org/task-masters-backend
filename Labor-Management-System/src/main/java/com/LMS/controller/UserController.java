@@ -4,6 +4,7 @@ import com.LMS.dto.AuthenticationRequestDto;
 import com.LMS.dto.AuthenticationResponseDto;
 import com.LMS.entity.User;
 import com.LMS.exception.EmailAlreadyExistsException;
+import com.LMS.exception.UserNotFoundException;
 import com.LMS.service.UserService;
 import com.LMS.utils.ApiResponse;
 import org.slf4j.Logger;
@@ -35,11 +36,11 @@ public class UserController {
             return ResponseEntity.ok(registeredUserResponse);
         } catch (EmailAlreadyExistsException e) {
             logger.error("Registration unsuccessful for {}: {}", user.getEmail(), e.getMessage());
-            ApiResponse<User> response = new ApiResponse<>("Registration Unsuccessful, " + e.getMessage());
+            ApiResponse<User> response = new ApiResponse<>("Registration Unsuccessful, " + e.getMessage(),409);
             return ResponseEntity.status(401).body(response);
         }catch (Exception e){
             logger.error("Registration unsuccessful for {}: {}", user.getEmail(), e.getMessage());
-            ApiResponse<User> response = new ApiResponse<>("Registration Unsuccessful, " + e.getMessage());
+            ApiResponse<User> response = new ApiResponse<>("Registration Unsuccessful, " + e.getMessage(),200);
             return ResponseEntity.internalServerError().body(response);
         }
     }
@@ -50,17 +51,18 @@ public class UserController {
             logger.info("Authentication request for {}", request.getEmail());
             AuthenticationResponseDto response = userService.authenticateUser(request.getEmail(), request.getPassword());
             logger.info("Authentication successful for {}", request.getEmail());
-            return ResponseEntity.ok(response);
+            ApiResponse response1= new ApiResponse<>("Authentication successful",response,200);
+            return ResponseEntity.ok(response1);
         } catch (BadCredentialsException e) {
             logger.error("Authentication failed for user. Incorrect credentials.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect email or password. Please try again: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>("Authentication failed for user. Incorrect credentials",401));
         } catch (AuthenticationException e) {
             logger.error("Authentication failed for {}: {}", request.getEmail(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>("Authentication failed",401));
         }
         catch (Exception e) {
             logger.error("Error processing authentication for {}: {}", request.getEmail(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing authentication request");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("Error processing authentication request ",500));
         }
     }
 
@@ -72,13 +74,13 @@ public class UserController {
             logger.info("Password reset request initiated for {}", email);
             userService.initiatePasswordReset(email);
             logger.info("Password reset email sent to {}", email);
-            return ResponseEntity.ok(new ApiResponse<>("Password reset email sent."));
+            return ResponseEntity.ok(new ApiResponse<>("Password reset email sent.",200));
         } catch (UsernameNotFoundException ex) {
             logger.error("Password reset request failed for {}: User not found", email);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("User not found."));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("User not found.",404));
         } catch (Exception ex) {
             logger.error("Error processing password reset request for {}: {}", email, ex.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("An error occurred while processing your request."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("An error occurred while processing your request.",500));
         }
     }
 
@@ -88,13 +90,13 @@ public class UserController {
             logger.info("Password reset initiated with token {}", token);
             userService.resetPassword(token, newPassword);
             logger.info("Password reset successfully with token {}", token);
-            return ResponseEntity.ok(new ApiResponse<>("Password has been reset successfully."));
+            return ResponseEntity.ok(new ApiResponse<>("Password has been reset successfully.",200));
         } catch (RuntimeException ex) {
             logger.error("Password reset failed with token {}: {}", token, ex.getMessage());
-            return ResponseEntity.badRequest().body(new ApiResponse<>(ex.getMessage()));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(ex.getMessage(),400));
         } catch (Exception ex) {
             logger.error("Error processing password reset with token {}: {}", token, ex.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("An error occurred while processing your request."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("An error occurred while processing your request.",500));
         }
 
     }
@@ -105,7 +107,10 @@ public class UserController {
             userService.deleteUserByEmail(email);
             logger.info("deleteUserByEmail Request-End ");
             return ResponseEntity.ok().body("User with email " + email + " has been deleted successfully.");
-        } catch (Exception e) {
+        } catch (UserNotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.status(404).body(response);
+        }catch (Exception e) {
             logger.error("Failed to deleting user:{}", e.getMessage());
             return ResponseEntity.badRequest().body("Error deleting user: " + e.getMessage());
         }
@@ -117,10 +122,16 @@ public class UserController {
             logger.info("UpdateUserByEmail Request {}",email);
             userService.updateUserByEmail(email, updatedUser);
             logger.info("deleteUserByEmail Request-End :{} ",updatedUser);
-            return ResponseEntity.ok().body("User with email " + email + " updated successfully.");
-        } catch (RuntimeException e) {
+            ApiResponse<User> response = new ApiResponse<>("deleteUserByEmail Request-End :{} ",updatedUser,200);
+            return ResponseEntity.ok().body(response);
+        } catch (UserNotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.status(404).body(response);
+        }catch (RuntimeException e) {
             logger.error("Failed to update user:{}", e.getMessage());
-            return ResponseEntity.badRequest().body("Failed to update user: " + e.getMessage());
+            ApiResponse<User> response = new ApiResponse<>("Failed to update user: " + e.getMessage(),null,400);
+
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }
