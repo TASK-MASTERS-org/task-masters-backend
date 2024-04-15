@@ -1,6 +1,8 @@
 package com.LMS.controller;
 
 import com.LMS.entity.Feedback;
+import com.LMS.entity.User;
+import com.LMS.exception.NotFoundException;
 import com.LMS.service.FeedbackService;
 import com.LMS.utils.ApiResponse;
 import org.slf4j.Logger;
@@ -26,10 +28,15 @@ public class FeedbackController {
     public ResponseEntity<?> postFeedback(@RequestBody Feedback feedback) {
         try {
             Feedback savedFeedback = feedbackService.saveFeedback(feedback);
+
             return ResponseEntity.ok(savedFeedback);
-        } catch (RuntimeException e) {
+        } catch (NotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.badRequest().body(response);
+        }catch (RuntimeException e) {
             logger.error("Failed to post feedback", e);
-            return ResponseEntity.badRequest().body("Failed to post feedback: " + e.getMessage());
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),500);
+            return ResponseEntity.badRequest().body(response);
         }
     }
     @GetMapping("/")

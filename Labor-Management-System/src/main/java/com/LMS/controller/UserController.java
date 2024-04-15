@@ -106,13 +106,16 @@ public class UserController {
             logger.info("deleteUserByEmail Request {}",email);
             userService.deleteUserByEmail(email);
             logger.info("deleteUserByEmail Request-End ");
-            return ResponseEntity.ok().body("User with email " + email + " has been deleted successfully.");
+            ApiResponse<User> response = new ApiResponse<>("User with email  "+ email +"  has been deleted successfully.",+200);
+            return ResponseEntity.ok().body(response);
         } catch (UserNotFoundException e) {
             ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+
             return ResponseEntity.status(404).body(response);
         }catch (Exception e) {
             logger.error("Failed to deleting user:{}", e.getMessage());
-            return ResponseEntity.badRequest().body("Error deleting user: " + e.getMessage());
+            ApiResponse<User> response = new ApiResponse<>("Error deleting user "+ e.getMessage(),500);
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -121,8 +124,8 @@ public class UserController {
         try {
             logger.info("UpdateUserByEmail Request {}",email);
             userService.updateUserByEmail(email, updatedUser);
-            logger.info("deleteUserByEmail Request-End :{} ",updatedUser);
-            ApiResponse<User> response = new ApiResponse<>("deleteUserByEmail Request-End :{} ",updatedUser,200);
+            logger.info("UpdateUserByEmail Request-End :{} ",updatedUser);
+            ApiResponse<User> response = new ApiResponse<>("Update UserByEmail Request-End :{} ",updatedUser,200);
             return ResponseEntity.ok().body(response);
         } catch (UserNotFoundException e) {
             ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);

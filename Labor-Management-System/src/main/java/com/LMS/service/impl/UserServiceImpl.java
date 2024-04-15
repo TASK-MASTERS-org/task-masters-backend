@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -45,6 +46,9 @@ public class UserServiceImpl implements UserService {
                         throw new EmailAlreadyExistsException(user.getEmail());
                     });
 
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            String encodedPassword = encoder.encode(user.getPassword());
+            user.setPassword(encodedPassword);
             User data= userRepository.save(user);
                 String massage="User registered successfully with email: "+ user.getEmail();
             logger.info("User registered successfully with email: {}", user.getEmail());
@@ -61,9 +65,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public AuthenticationResponseDto authenticateUser(String email, String password) {
         try {
-            logger.info("Authenticating user with email: {}", email);
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            logger.info("Authenticating user with email: {} password:{}", email,password);
             var user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            String encodedPassword = encoder.encode(password);
+            user.setPassword(encodedPassword);
             String jwtToken = jwtService.generateToken(user);
             logger.info("Authentication successful for user: {}", email);
             return AuthenticationResponseDto.builder().accessToken(jwtToken).build();
