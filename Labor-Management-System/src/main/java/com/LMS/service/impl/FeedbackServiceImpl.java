@@ -43,7 +43,8 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Override
     public Feedback getFeedback(Long id) {
         try {
-            return feedbackRepository.findById(id).orElseThrow(() -> new RuntimeException("Feedback not found for ID: " + id));
+          Feedback respnse=feedbackRepository.findById(id).orElseThrow(() -> new NotFoundException("Feedback not found for ID: " + id));
+            return respnse ;
         } catch (RuntimeException e) {
             logger.error("Failed to retrieve feedback with ID: {}", id, e);
             throw e;
@@ -53,7 +54,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     public Feedback updateFeedback(Long id, Feedback feedbackDetails) {
         try {
             Feedback feedback = feedbackRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Feedback not found for ID: " + id));
+                    .orElseThrow(() -> new NotFoundException("Feedback not found for ID: " + id));
             feedback.setReview(feedbackDetails.getReview());
             feedback.setRating(feedbackDetails.getRating());
             feedback.setServiceType(feedbackDetails.getServiceType());
@@ -68,7 +69,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     public void deleteFeedback(Long id) {
         try {
             Feedback feedback = feedbackRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Feedback not found for ID: " + id));
+                    .orElseThrow(() -> new NotFoundException("Feedback not found for ID: " + id));
             feedbackRepository.delete(feedback);
         } catch (RuntimeException e) {
             logger.error("Failed to delete feedback with ID: {}", id, e);
@@ -89,7 +90,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     public Feedback getFeedbackByHiredLabourId(Long hiredLabourId) {
         try {
             return feedbackRepository.findByHiredLabourId(hiredLabourId)
-                    .orElseThrow(() -> new RuntimeException("No feedback found for HiredLabour with ID: " + hiredLabourId));
+                    .orElseThrow(() -> new NotFoundException("No feedback found for HiredLabour with ID: " + hiredLabourId));
         } catch (RuntimeException e) {
             logger.error("Failed to retrieve feedback for HiredLabour ID: {}", hiredLabourId, e);
             throw e;

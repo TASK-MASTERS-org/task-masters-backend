@@ -44,10 +44,15 @@ public class FeedbackController {
         try {
             logger.info("Fetching feedback with ID: {}", id);
             Feedback feedback = feedbackService.getFeedback(id);
+            ApiResponse<Feedback> response = new ApiResponse<>("GET FeedbackBy ID Success",feedback,404);
             return ResponseEntity.ok(feedback);
-        } catch (RuntimeException e) {
+        } catch (NotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.badRequest().body(response);
+        }catch (RuntimeException e) {
             logger.error("Error retrieving feedback with ID: {}", id, e);
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),500);
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -59,6 +64,9 @@ public class FeedbackController {
             logger.info("Updating feedback with ID: {}", id);
             Feedback updatedFeedback = feedbackService.updateFeedback(id, feedback);
             return ResponseEntity.ok(new ApiResponse<>("update Feedback Response Success",updatedFeedback,200));
+        }catch (NotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.badRequest().body(response);
         } catch (RuntimeException e) {
             logger.error("Error updating feedback with ID: {}", id, e);
            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), null,400));
@@ -73,6 +81,9 @@ public class FeedbackController {
             feedbackService.deleteFeedback(id);
             ApiResponse response= new ApiResponse<>(massage,null,201);
             return ResponseEntity.ok(response);
+        }catch (NotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.badRequest().body(response);
         } catch (RuntimeException e) {
             logger.error("Error deleting feedback with ID: {}", id, e);
             return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), null,400));
@@ -84,6 +95,9 @@ public class FeedbackController {
         try {
             List<Feedback> feedbacks = feedbackService.getFeedbacksByUserId(userId);
             return ResponseEntity.ok(new ApiResponse<>("Get Feedbacks By UserId Success",feedbacks,200));
+        }catch (NotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             logger.error("Failed to get feedbacks for user ID: {}", userId, e);
             return ResponseEntity.badRequest().build();
@@ -97,6 +111,9 @@ public class FeedbackController {
             Feedback feedback = feedbackService.getFeedbackByHiredLabourId(hiredLabourId);
             return ResponseEntity.ok(new ApiResponse<>("Get feedback by labour hired ID success",feedback,200) );
 
+        }catch (NotFoundException e) {
+            ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             logger.error("Failed to get getFeedbackByHiredLabourId for user ID: {}", hiredLabourId, e);
             return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), null,400));
