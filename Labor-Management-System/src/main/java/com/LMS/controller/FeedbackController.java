@@ -82,4 +82,18 @@ public class FeedbackController {
         }
     }
 
+    @GetMapping("/hiredLabour")
+    public ResponseEntity<ApiResponse> getFeedbackByHiredLabourId(@RequestParam Long hiredLabourId) {
+        try {
+
+            Feedback feedback = feedbackService.getFeedbackByHiredLabourId(hiredLabourId);
+            return ResponseEntity.ok(new ApiResponse<>("Get feedback by labour hired ID success",feedback) );
+
+        } catch (Exception e) {
+            logger.error("Failed to get getFeedbackByHiredLabourId for user ID: {}", hiredLabourId, e);
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), null));
+        }
+
+    }
+
 }

@@ -84,4 +84,14 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new RuntimeException("Failed to fetch feedbacks for user ID: " + userId, e);
         }
     }
+    @Override
+    public Feedback getFeedbackByHiredLabourId(Long hiredLabourId) {
+        try {
+            return feedbackRepository.findByHiredLabourId(hiredLabourId)
+                    .orElseThrow(() -> new RuntimeException("No feedback found for HiredLabour with ID: " + hiredLabourId));
+        } catch (RuntimeException e) {
+            logger.error("Failed to retrieve feedback for HiredLabour ID: {}", hiredLabourId, e);
+            throw e;
+        }
+    }
 }

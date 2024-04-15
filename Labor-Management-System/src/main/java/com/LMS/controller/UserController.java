@@ -35,7 +35,11 @@ public class UserController {
         } catch (EmailAlreadyExistsException e) {
             logger.error("Registration unsuccessful for {}: {}", user.getEmail(), e.getMessage());
             ApiResponse<User> response = new ApiResponse<>("Registration Unsuccessful, " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.status(401).body(response);
+        }catch (Exception e){
+            logger.error("Registration unsuccessful for {}: {}", user.getEmail(), e.getMessage());
+            ApiResponse<User> response = new ApiResponse<>("Registration Unsuccessful, " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 

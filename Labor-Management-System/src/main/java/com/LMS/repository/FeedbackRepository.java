@@ -7,9 +7,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     @Query("SELECT f FROM Feedback f JOIN f.hiredLabour hl WHERE hl.user.id = :userId")
     List<Feedback> findAllFeedbacksByUserId(@Param("userId") Long userId);
+    Optional<Feedback> findByHiredLabourId(Long hiredLabourId);
 }
