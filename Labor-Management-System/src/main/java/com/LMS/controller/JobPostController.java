@@ -29,7 +29,7 @@ public class JobPostController {
 
         } catch (Exception e) {
             logger.error("Error creating job post: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to create job post"));
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to create job post",400));
         }
     }
 
@@ -42,7 +42,7 @@ public class JobPostController {
             return ResponseEntity.ok(jobPosts);
         } catch (Exception e) {
             logger.error("Error fetching job posts for user ID {}: {}", userId, e.getMessage());
-            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to fetch job posts for user"));
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to fetch job posts for user",400));
         }
     }
 
@@ -53,7 +53,7 @@ public class JobPostController {
             return ResponseEntity.ok(jobPostService.updateJobPost(id, jobPost));
         } catch (Exception e) {
             logger.error("Error updating job post: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Error updating job post"));
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Error updating job post",400));
         }
     }
 
@@ -64,7 +64,7 @@ public class JobPostController {
             return ResponseEntity.ok(jobPostService.deleteJobPost(id));
         } catch (Exception e) {
             logger.error("Error deleting job post: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Error deleting job post"));
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Error deleting job post",400));
         }
     }
     @GetMapping("/getJobPostByID")
@@ -76,7 +76,7 @@ public class JobPostController {
             return ResponseEntity.ok(jobPosts);
         } catch (Exception e) {
             logger.error("Error fetching job posts for user ID {}: {}",j_Id , e.getMessage());
-            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to fetch job posts for user"));
+            return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to fetch job posts for user",400));
         }
     }
 

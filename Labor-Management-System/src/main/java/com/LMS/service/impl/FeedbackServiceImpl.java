@@ -2,6 +2,7 @@ package com.LMS.service.impl;
 
 import com.LMS.entity.Feedback;
 import com.LMS.entity.HiredLabour;
+import com.LMS.exception.NotFoundException;
 import com.LMS.repository.FeedbackRepository;
 import com.LMS.repository.HiredLabourRepository;
 import com.LMS.service.FeedbackService;
@@ -26,7 +27,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         try {
             logger.info(" saving feedback Request:{}", feedback.getHiredLabour());
             HiredLabour managedHiredLabour = hiredLabourRepository.findById(feedback.getHiredLabour().getId())
-                    .orElseThrow(() -> new RuntimeException("HiredLabour not found"));
+                    .orElseThrow(() -> new NotFoundException("HiredLabour Not Found"));
             Feedback newObject= new  Feedback();
             newObject.setRating(feedback.getRating());
             newObject.setReview(feedback.getReview());
