@@ -75,6 +75,11 @@ public class FeedbackServiceImpl implements FeedbackService {
             Feedback feedback = feedbackRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Feedback not found for ID: " + id));
             feedbackRepository.delete(feedback);
+            HiredLabour managedHiredLabour = hiredLabourRepository.findById(feedback.getHiredLabour().getId())
+                    .orElseThrow(() -> new NotFoundException("HiredLabour Not Found"));
+            managedHiredLabour.setStatus("Completed");
+            hiredLabourRepository.save(managedHiredLabour);
+
         } catch (RuntimeException e) {
             logger.error("Failed to delete feedback with ID: {}", id, e);
             throw e;
