@@ -30,7 +30,7 @@ public class FeedbackController {
         try {
             Feedback savedFeedback = feedbackService.saveFeedback(feedback);
 
-            return ResponseEntity.ok(savedFeedback);
+            return ResponseEntity.ok(new ApiResponse<>("savedFeedback",savedFeedback,200));
         } catch (NotFoundException e) {
             ApiResponse<User> response = new ApiResponse<>(e.getMessage(),404);
             return ResponseEntity.badRequest().body(response);
