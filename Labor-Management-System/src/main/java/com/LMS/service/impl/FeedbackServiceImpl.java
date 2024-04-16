@@ -34,6 +34,10 @@ public class FeedbackServiceImpl implements FeedbackService {
             newObject.setServiceType(feedback.getServiceType());
             newObject.setHiredLabour(feedback.getHiredLabour());
             Feedback savedFeedback = feedbackRepository.save(newObject);
+            long id=savedFeedback.getHiredLabour().getId();
+            managedHiredLabour.setStatus("CompletedRated");
+            hiredLabourRepository.save(managedHiredLabour);
+
             return savedFeedback;
         } catch (Exception e) {
             logger.error("Error saving feedback", e);

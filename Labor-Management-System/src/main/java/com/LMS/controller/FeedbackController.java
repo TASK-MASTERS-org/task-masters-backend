@@ -3,6 +3,7 @@ package com.LMS.controller;
 import com.LMS.entity.Feedback;
 import com.LMS.entity.User;
 import com.LMS.exception.NotFoundException;
+import com.LMS.repository.HiredLabourRepository;
 import com.LMS.service.FeedbackService;
 import com.LMS.utils.ApiResponse;
 import org.slf4j.Logger;
