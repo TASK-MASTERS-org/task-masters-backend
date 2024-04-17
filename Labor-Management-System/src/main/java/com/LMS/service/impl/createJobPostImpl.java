@@ -1,6 +1,7 @@
 package com.LMS.service.impl;
 
 import com.LMS.controller.UserController;
+import com.LMS.dto.JobReportDTO;
 import com.LMS.entity.HiredLabour;
 import com.LMS.entity.JobPost;
 import com.LMS.repository.HiredLabourRepository;
@@ -14,7 +15,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -97,6 +100,31 @@ throw  new RuntimeException("error while Creating Job Posts",e);
             logger.warn("No job post found with ID {}", id);
         }
         return new ApiResponse("getJobPostById Success",jobPost,200);
+    }
+
+    @Override
+    public ApiResponse GetJobPostReportDetails(Long userId) {
+        logger.info("GetJobPostReportDetails-request Started",userId);
+        List<JobPost> data = jobPostRepository.findByUserId(userId);
+        logger.info("GetJobPostReportDetails-request Started :{}",data);
+        Map<String, Integer> categoryCount = new HashMap<>();
+        Map<String, Integer> stateCount = new HashMap<>();
+        int totalJobPostCount = data.size();
+        for (JobPost job : data) {
+            String category = job.getCategory();
+            categoryCount.put(category, categoryCount.getOrDefault(category, 0) + 1);
+
+            String state = job.getHiredLabour().getStatus();
+            stateCount.put(state, stateCount.getOrDefault(state, 0) + 1);
+        }
+        // Populate JobReportDTO
+        JobReportDTO reportDTO = new JobReportDTO();
+        reportDTO.setTotalJobPostCount(totalJobPostCount);
+        reportDTO.setTotalCategoryCount(categoryCount.size());
+        reportDTO.setCategoryCount(categoryCount);
+        reportDTO.setStateCount(stateCount);
+
+        return new ApiResponse<>("getReport Details Success", reportDTO, 200);
     }
 
 

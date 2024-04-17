@@ -137,4 +137,14 @@ public class UserController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    @GetMapping("/User-report")
+    public ResponseEntity<ApiResponse> getJobPostingReportDetails(@RequestParam Long id) {
+
+        // List of job postings
+        ApiResponse Report = userService.generateUserReport(id);
+
+        return ResponseEntity.ok(Report);
+    }
+
 }

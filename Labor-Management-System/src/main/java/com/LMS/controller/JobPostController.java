@@ -9,6 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @CrossOrigin
 @RequestMapping("/api/job-posts")
@@ -78,6 +82,15 @@ public class JobPostController {
             logger.error("Error fetching job posts for user ID {}: {}",j_Id , e.getMessage());
             return ResponseEntity.internalServerError().body(new ApiResponse(e.getMessage(), "Failed to fetch job posts for user",400));
         }
+    }
+
+    @GetMapping("/job-posting-report")
+    public ResponseEntity<ApiResponse> getJobPostingReportDetails(@RequestParam Long userId) {
+
+        // List of job postings
+        ApiResponse jobPostings = jobPostService.GetJobPostReportDetails(userId);
+
+        return ResponseEntity.ok(jobPostings);
     }
 
 }

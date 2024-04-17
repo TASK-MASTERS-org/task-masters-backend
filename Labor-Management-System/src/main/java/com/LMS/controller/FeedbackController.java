@@ -122,4 +122,11 @@ public class FeedbackController {
 
     }
 
+    @GetMapping("/Feedback-report")
+    public ResponseEntity<ApiResponse> getJobPostingReportDetails(@RequestParam Long userId) {
+
+        ApiResponse Feednack = feedbackService.GetFeedBackReportDetails(userId);
+
+        return ResponseEntity.ok(Feednack);
+    }
 }

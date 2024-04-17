@@ -1,6 +1,7 @@
 package com.LMS.service;
 
 import com.LMS.entity.Feedback;
+import com.LMS.utils.ApiResponse;
 
 import java.util.List;
 
@@ -11,4 +12,5 @@ public interface FeedbackService {
     void deleteFeedback(Long id);
     List<Feedback> getFeedbacksByUserId(Long userId);
     Feedback getFeedbackByHiredLabourId(Long hiredLabourId);
+    ApiResponse GetFeedBackReportDetails(Long userId);
 }
