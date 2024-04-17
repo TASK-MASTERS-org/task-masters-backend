@@ -15,5 +15,6 @@ public interface UserService {
     void deleteUserByEmail(String email);
     void updateUserByEmail(String email, User updatedUser);
 
+    ApiResponse generateUserReport(Long id);
 
 }

@@ -2,9 +2,14 @@ package com.LMS.service.impl;
 
 import com.LMS.configs.JwtService;
 import com.LMS.dto.AuthenticationResponseDto;
+import com.LMS.dto.UserReportDTO;
+import com.LMS.entity.Feedback;
+import com.LMS.entity.JobPost;
 import com.LMS.entity.User;
 import com.LMS.exception.EmailAlreadyExistsException;
 import com.LMS.exception.UserNotFoundException;
+import com.LMS.repository.FeedbackRepository;
+import com.LMS.repository.JobPostRepository;
 import com.LMS.repository.UserRepository;
 import com.LMS.service.EmailService;
 import com.LMS.service.UserService;
@@ -20,6 +25,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.BadCredentialsException;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -36,6 +43,12 @@ public class UserServiceImpl implements UserService {
     private AuthenticationManager authenticationManager;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    FeedbackRepository feedbackRepository;
+    @Autowired
+    JobPostRepository jobPostRepository;
+
+
 
     @Override
     public ApiResponse registerUser(User user) {
@@ -173,5 +186,34 @@ public class UserServiceImpl implements UserService {
             logger.error("An unexpected error occurred while updating user with email {}: {}", email, e.getMessage());
             throw new RuntimeException("Update failed due to an unexpected error");
         }
+    }
+
+    @Override
+    public ApiResponse generateUserReport(Long id) {
+        // Fetch user details by ID
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id.toString()));
+
+
+        UserReportDTO reportDTO = new UserReportDTO();
+        reportDTO.setUserId(user.getId());
+        reportDTO.setFirstName(user.getFName());
+        reportDTO.setLastName(user.getLName());
+        reportDTO.setEmail(user.getEmail());
+        reportDTO.setAddress(user.getAddress());
+        reportDTO.setPhoneNumber(user.getPhoneNumber());
+
+        List<Feedback> data= feedbackRepository.findAllFeedbacksByUserId(id);
+        List<JobPost> data2 = jobPostRepository.findByUserId(id);
+        // Initialize variables for report generation
+        int totalFeedbackCount = data.size();
+        int totalJobPostCount = data2.size();
+
+        // Calculate total feedback count
+        reportDTO.setTotalFeedbackCount(totalFeedbackCount);
+
+        // Calculate total post count
+        reportDTO.setTotalPostCount(totalJobPostCount);
+
+        return new ApiResponse<>("user ReportDetails",reportDTO,200);
     }
 }

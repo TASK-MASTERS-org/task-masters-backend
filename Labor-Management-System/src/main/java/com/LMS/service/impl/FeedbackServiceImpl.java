@@ -1,16 +1,21 @@
 package com.LMS.service.impl;
 
+import com.LMS.dto.FeedbackReportDTO;
 import com.LMS.entity.Feedback;
 import com.LMS.entity.HiredLabour;
 import com.LMS.exception.NotFoundException;
 import com.LMS.repository.FeedbackRepository;
 import com.LMS.repository.HiredLabourRepository;
 import com.LMS.service.FeedbackService;
+import com.LMS.utils.ApiResponse;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 @Service
@@ -105,4 +110,66 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw e;
         }
     }
+
+    @Override
+    public ApiResponse GetFeedBackReportDetails(Long userId) {
+        logger.info("GetFeedBackReportDetails:{}", userId);
+        List<Feedback> data = feedbackRepository.findAllFeedbacksByUserId(userId);
+
+        // Initialize variables for report generation
+        int totalFeedbackCount = data.size();
+        double totalRating = 0;
+        Map<String, Integer> serviceTypeCountMap = new HashMap<>();
+        Map<String, Double> serviceTypeTotalRatingMap = new HashMap<>();
+
+        // Process feedback data
+        for (Feedback feedback : data) {
+            // Check if rating is not null
+            String ratingStr = feedback.getRating();
+            if (ratingStr != null && !ratingStr.trim().isEmpty()) {
+                // Calculate total rating
+                totalRating += Double.parseDouble(ratingStr);
+
+                // Count feedback per service type
+                String serviceType = feedback.getServiceType();
+                if (serviceType != null) { // Check for null serviceType
+                    serviceTypeCountMap.put(serviceType, serviceTypeCountMap.getOrDefault(serviceType, 0) + 1);
+
+                    // Calculate total rating per service type
+                    double rating = Double.parseDouble(ratingStr);
+                    double totalRatingForType = serviceTypeTotalRatingMap.getOrDefault(serviceType, 0.0);
+                    totalRatingForType += rating;
+                    serviceTypeTotalRatingMap.put(serviceType, totalRatingForType);
+                }
+            }
+        }
+
+        // Avoid division by zero if there are no feedbacks
+        double overallAvgRating = totalFeedbackCount > 0 ? totalRating / totalFeedbackCount : 0;
+
+        // Convert maps to arrays of objects
+        List<Map<String, Object>> serviceTypeCount = new ArrayList<>();
+        List<Map<String, Object>> serviceTypeAvgRating = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : serviceTypeCountMap.entrySet()) {
+            Map<String, Object> countMap = new HashMap<>();
+            countMap.put(entry.getKey(), entry.getValue());
+            serviceTypeCount.add(countMap);
+
+            double avgRating = entry.getValue() > 0 ? serviceTypeTotalRatingMap.getOrDefault(entry.getKey(), 0.0) / entry.getValue() : 0.0;
+            Map<String, Object> avgRatingMap = new HashMap<>();
+            avgRatingMap.put(entry.getKey(), avgRating);
+            serviceTypeAvgRating.add(avgRatingMap);
+        }
+
+        // Populate FeedbackReportDTO
+        FeedbackReportDTO reportDTO = new FeedbackReportDTO();
+        reportDTO.setTotalFeedbackCount(totalFeedbackCount);
+        reportDTO.setOverallAvgRating(overallAvgRating);
+        reportDTO.setServiceTypeCount(serviceTypeCount);
+        reportDTO.setServiceTypeAvgRating(serviceTypeAvgRating);
+
+        return new ApiResponse<>("GetFeedBackReportDetails", reportDTO, 200);
+    }
+
+
 }
