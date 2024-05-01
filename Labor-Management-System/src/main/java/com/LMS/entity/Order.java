@@ -9,12 +9,12 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "orders")
-public class Orders {
+public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @JsonIgnoreProperties({"email", "password", "address", "phoneNumber", "role", "resetToken",
             "tokenExpirationDate", "enabled", "username", "authorities", "fName",
@@ -24,5 +24,8 @@ public class Orders {
 
     private String status;
     private String address;
+    @ManyToOne
+    @JoinColumn(name = "driver_id", referencedColumnName = "id")
+    private Driver driver;
 
 }
